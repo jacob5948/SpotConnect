@@ -48,18 +48,8 @@ jobs:
           path: spotraop/bin/
 
   build-macos:
-    name: Build macOS (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86_64
-            runner: macos-latest
-            osx_arch: x86_64
-          - arch: arm64
-            runner: macos-latest
-            osx_arch: arm64
+    name: Build macOS (universal)
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,43 +63,43 @@ jobs:
       - name: Build spotupnp
         working-directory: spotupnp
         run: |
-          mkdir -p build/macos-${{ matrix.arch }}
-          cd build/macos-${{ matrix.arch }}
+          mkdir -p build/macos-universal
+          cd build/macos-universal
           cmake ../.. \
             -DHOST=macos \
-            -DPLATFORM=${{ matrix.arch }} \
-            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.osx_arch }} \
+            -DPLATFORM=universal \
+            -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls
           make -j$(sysctl -n hw.ncpu)
           mkdir -p ../../bin
-          cp spotupnp-macos-${{ matrix.arch }}* ../../bin/ 2>/dev/null || true
+          cp spotupnp-macos-* ../../bin/ 2>/dev/null || true
 
       - name: Build spotraop
         working-directory: spotraop
         run: |
-          mkdir -p build/macos-${{ matrix.arch }}
-          cd build/macos-${{ matrix.arch }}
+          mkdir -p build/macos-universal
+          cd build/macos-universal
           cmake ../.. \
             -DHOST=macos \
-            -DPLATFORM=${{ matrix.arch }} \
-            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.osx_arch }} \
+            -DPLATFORM=universal \
+            -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls
           make -j$(sysctl -n hw.ncpu)
           mkdir -p ../../bin
-          cp spotraop-macos-${{ matrix.arch }}* ../../bin/ 2>/dev/null || true
+          cp spotraop-macos-* ../../bin/ 2>/dev/null || true
 
       - name: Upload spotupnp macOS binaries
         uses: actions/upload-artifact@v4
         with:
-          name: spotupnp-macos-${{ matrix.arch }}
+          name: spotupnp-macos
           path: spotupnp/bin/
 
       - name: Upload spotraop macOS binaries
         uses: actions/upload-artifact@v4
         with:
-          name: spotraop-macos-${{ matrix.arch }}
+          name: spotraop-macos
           path: spotraop/bin/
 
   build-windows:

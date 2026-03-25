@@ -76,7 +76,8 @@ jobs:
             -DPLATFORM=universal \
             -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls
+            -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls \
+            -DPython3_EXECUTABLE=/tmp/pyenv/bin/python3
           make -j$(sysctl -n hw.ncpu)
           mkdir -p ../../bin
           cp spotupnp-macos-* ../../bin/ 2>/dev/null || true
@@ -91,7 +92,8 @@ jobs:
             -DPLATFORM=universal \
             -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls
+            -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls \
+            -DPython3_EXECUTABLE=/tmp/pyenv/bin/python3
           make -j$(sysctl -n hw.ncpu)
           mkdir -p ../../bin
           cp spotraop-macos-* ../../bin/ 2>/dev/null || true

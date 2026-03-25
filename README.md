@@ -70,8 +70,17 @@ For each platform, there is a normal and a '-static' version. This one includes 
 - Use `-r` to set Spotify's Vorbis encoding rate
 - Use `-N "<format>"` to change the default name of Spotify players (the player name followed by '+' by default). It's a C-string format where '%s' is the player's name, so default is "%s+"
 - Use `-a <port>[:<count>]`to specify a port range (default count is 128)
-- Use of `-z` disables interactive mode (no TTY) **and** self-daemonizes (use `-p <file>` to get the PID). Use of `-Z` only disables interactive mode 
+- Use `-f <file>` to write logs to a file
+- Use `-D <id>` and `-S <secret>` to set Spotify client ID and secret on the command line
+- Use of `-z` disables interactive mode (no TTY) **and** self-daemonizes (use `-p <file>` to get the PID). Use of `-Z` only disables interactive mode
 - <strong>Do not daemonize (using & or any other method) the executable w/o disabling interactive mode (`-Z`), otherwise it will consume all CPU. On Linux, FreeBSD and Solaris, best is to use `-z`. Note that -z option is not available on MacOS or Windows</strong>
+
+##### spotupnp-specific command line options
+- Use `-c <codec>` to set audio codec (mp3, aac, vorbis, opus, flac, wav, pcm); default is flac
+- Use `-g <n>` to set HTTP content-length mode (-3=chunked, -2=known when possible, -1=none, 0=fake/estimated)
+- Use `-A <n>` to set file cache mode (0=memory, 1=infinite memory, 2=disk); see [HTTP content-length section](#HTTP-content-length-and-transfer-modes)
+- Use `-u <n>` to set maximum UPnP version used to search players (default 1)
+- Use `-e` to disable gapless playback
 
 ## Config file parameters 
 
@@ -79,34 +88,42 @@ The default configuration file is `config.xml`, stored in the same directory as 
 
 ### Common
 - `enabled <0|1>` : in common section, enables new discovered players by default. In a dedicated section, enables the player
-- `name`        : The name that will appear for the device in AirPlay. You can change the default name.
-- `vorbis_rate <96|160|320>` : set the Spotify bitrate
-- `remove_timeout <-1|n>` : set to `-1` to avoid removing devices prematurely
+- `name`        : The name that will appear for the device in Spotify. You can change the default name.
+- `vorbis_rate <96|160|320>` : set the Spotify bitrate (default 160)
 
 ##### UPnP
 - `upnp_max`    : set the maximum UPnP version use to search players (default 1)
 - `artwork`	: an URL to a fixed artwork to be displayed on player in flow mode
 - `flow`        : enable flow mode
 - `gapless`     : use UPnP gapless mode (if players supports it)
-- `http_content_length`	   : same as `-g` command line parameter
-- `codec mp3[:<bitrate>]|aac[:<bitrate>]|vorbis[:<bitrate>]|opus[:<bitrate>]|flc[:0..9]|wav|pcm`: format used to send HTTP audio. FLAC is recommended but uses more CPU (pcm only available for UPnP). For example, `mp3:320` for 320Kb/s MP3 encoding.
-- `use_filecache`: cache the whole track on disk (see [this](#HTTP-content-length-and-transfer-modes) section)
+- `max_volume <n>` : cap the maximum volume level sent to player (default 100)
+- `http_content_length <n>`	: same as `-g` command line parameter (-3=chunked, -2=known when possible, -1=none, 0=fake/estimated)
+- `codec mp3[:<bitrate>]|aac[:<bitrate>]|vorbis[:<bitrate>]|opus[:<bitrate>]|flc[:0..9]|wav|pcm`: format used to send HTTP audio. FLAC is recommended but uses more CPU (pcm only available for UPnP). For example, `mp3:320` for 320Kb/s MP3 encoding. Default is `flac`.
+- `use_filecache <0|1|2>`: file cache mode — 0=memory, 1=infinite memory, 2=disk (see [this](#HTTP-content-length-and-transfer-modes) section)
 
 #### AirPlay
-- `alac_encode <0|1>`: format used to send audio (`0` = PCM, `1` = ALAC)
+- `alac_encode <0|1>`: format used to send audio (`0` = PCM, `1` = ALAC; default 1)
 - `encryption <0|1>`: most software-based player and cheap knock-off require encryption to be activated otherwise they won't stream.
+- `remove_timeout <-1|n>` : set to `-1` to avoid removing devices prematurely (default 120s)
+- `send_metadata <0|1>`: send track metadata (title, artist, album) to the player (default 1)
+- `send_coverart <0|1>`: send cover art to the player (default 1)
+- `read_ahead <ms>`: audio read-ahead buffer duration in milliseconds (default 2000)
+- `volume_feedback <0|1>`: feed volume changes from the player back to Spotify (default 1)
+- `volume_mode <0|1|2>`: volume control mode — 0=software (SpotConnect adjusts audio level), 1=device-native, 2=hardware (player controls volume; default 2)
 
 #### Apple TV
 - `raop_credentials`   : Apple TV pairing credential obtained from running in `-l` pairing mode
 
 ### Global
-These are set in the main `<spotraop>` section:
+These are set in the main `<spotupnp>` or `<spotraop>` section (depending on the application):
 - `log_limit <-1|n>` 	   : (default -1) when using log file (`-f` parameter), limits its size to 'n' MB (-1 = no limit)
-- `max_players`            : set the maximum of players (default 32)
+- `max_players`            : set the maximum of players (default 32, spotupnp only)
 - `ports <port>[:<count>]` : set port range to use (see -a)
 - `interface ?|<iface>|<ip>` : set the network interface, ip or autodetect
 - `credentials 0|1`        : see below
 - `credentials_path <path>`: see below
+- `client_id <id>`         : Spotify client ID (see update note above; equivalent to `-D` on command line)
+- `client_secret <secret>` : Spotify client secret (equivalent to `-S` on command line)
 
 There are many other parameters, to list all of them, use `-i <config>` to create a default config file.
 
@@ -232,7 +249,7 @@ The default mode of SpotUPnP is "chunked-encoding" (\<http_content_length\> = -3
 
 All this might still not work as some players do not understand that the source is not a randomly accessible (searchable) file and want to get the first(e.g.) 128kB to try to do some smart guess on the length, close the connection, re-open it from the beginning and expect to have the same content. I'm trying to keep a buffer of last recently sent bytes to be able to resend-it, but that does not always works. Normally, players should understand that when they ask for a range and the response is 200 (full content), it *means* the source does not support range request but some don't. 
 
-To add insult to injury, when pausing some players close the connection and re-open it upon resume, but want the whole resource again, they can't even bother do a range-request starting at the last byte they received. That happens regardless of how you've instructed them that they should **NOT** do that. The only option is then to cache the whole track, which I can't do in memory, so in that case use the option `use_filecache` (or -C on command line) to have the whole track buffered on disk (in system tmp's). Now, even that might not suffice in chunked-encoding mode, these players **WANT** a track size to be able to pause. So in that case you need use HTTP mode 0 as well.
+To add insult to injury, when pausing some players close the connection and re-open it upon resume, but want the whole resource again, they can't even bother do a range-request starting at the last byte they received. That happens regardless of how you've instructed them that they should **NOT** do that. The only option is then to cache the whole track, which I can't do in memory, so in that case use the option `use_filecache 2` in the config (or `-A 2` on the command line) to have the whole track buffered on disk (in system tmp's). Now, even that might not suffice in chunked-encoding mode, these players **WANT** a track size to be able to pause. So in that case you need use HTTP mode 0 as well.
 
 UPnP is a boatload of crap, unfortunately...
 

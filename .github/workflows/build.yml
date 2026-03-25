@@ -81,36 +81,52 @@ jobs:
       - name: Build spotupnp
         working-directory: spotupnp
         run: |
-          mkdir -p build/macos-universal
-          cd build/macos-universal
-          cmake ../.. \
-            -DHOST=macos \
-            -DPLATFORM=universal \
-            -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls \
-            -DPython_EXECUTABLE=/tmp/pyenv/bin/python3 \
-            -DNANOPB_GENERATOR_SOURCE_DIR=$NANOPB_GENDIR
-          make -j$(sysctl -n hw.ncpu)
-          mkdir -p ../../bin
-          cp spotupnp-macos-* ../../bin/ 2>/dev/null || true
+          for ARCH in arm64 x86_64; do
+            mkdir -p build/macos-${ARCH}
+            cd build/macos-${ARCH}
+            cmake ../.. \
+              -DHOST=macos \
+              -DPLATFORM=${ARCH} \
+              -DCMAKE_OSX_ARCHITECTURES=${ARCH} \
+              -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+              -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls \
+              -DPython_EXECUTABLE=/tmp/pyenv/bin/python3 \
+              -DNANOPB_GENERATOR_SOURCE_DIR=$NANOPB_GENDIR
+            make -j$(sysctl -n hw.ncpu)
+            cd ../..
+          done
+          mkdir -p bin
+          lipo -create \
+            build/macos-arm64/spotupnp-macos-arm64 \
+            build/macos-x86_64/spotupnp-macos-x86_64 \
+            -output bin/spotupnp-macos-universal 2>/dev/null || \
+          lipo -create \
+            build/macos-arm64/spotupnp-macos-arm64-static \
+            build/macos-x86_64/spotupnp-macos-x86_64-static \
+            -output bin/spotupnp-macos-universal-static 2>/dev/null || true
 
       - name: Build spotraop
         working-directory: spotraop
         run: |
-          mkdir -p build/macos-universal
-          cd build/macos-universal
-          cmake ../.. \
-            -DHOST=macos \
-            -DPLATFORM=universal \
-            -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls \
-            -DPython_EXECUTABLE=/tmp/pyenv/bin/python3 \
-            -DNANOPB_GENERATOR_SOURCE_DIR=$NANOPB_GENDIR
-          make -j$(sysctl -n hw.ncpu)
-          mkdir -p ../../bin
-          cp spotraop-macos-* ../../bin/ 2>/dev/null || true
+          for ARCH in arm64 x86_64; do
+            mkdir -p build/macos-${ARCH}
+            cd build/macos-${ARCH}
+            cmake ../.. \
+              -DHOST=macos \
+              -DPLATFORM=${ARCH} \
+              -DCMAKE_OSX_ARCHITECTURES=${ARCH} \
+              -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+              -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls \
+              -DPython_EXECUTABLE=/tmp/pyenv/bin/python3 \
+              -DNANOPB_GENERATOR_SOURCE_DIR=$NANOPB_GENDIR
+            make -j$(sysctl -n hw.ncpu)
+            cd ../..
+          done
+          mkdir -p bin
+          lipo -create \
+            build/macos-arm64/spotraop-macos-arm64 \
+            build/macos-x86_64/spotraop-macos-x86_64 \
+            -output bin/spotraop-macos-universal 2>/dev/null || true
 
       - name: Upload spotupnp macOS binaries
         uses: actions/upload-artifact@v4

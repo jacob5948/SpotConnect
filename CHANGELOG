@@ -1,3 +1,8 @@
+0.20.2
+ - add default_volume and volume_remember config options
+ - update README with configuration documentation
+ - fix CI builds (macOS arm64-only, Windows cross-compile)
+
 0.20.1
  - add missing builds
  

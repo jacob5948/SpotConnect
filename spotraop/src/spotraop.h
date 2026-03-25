@@ -56,6 +56,8 @@ typedef struct sMRConfig
 	int			VolumeMode;
 	int			VolumeFeedback;
 	bool		AlacEncode;
+	int			DefaultVolume;
+	bool		VolumeRemember;
 } tMRConfig;
 
 

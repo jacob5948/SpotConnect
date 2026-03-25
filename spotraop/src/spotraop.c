@@ -88,6 +88,8 @@ tMRConfig			glMRConfig = {
 							2,				 // VolumeMode = HARDWARE
 							VOLUME_FEEDBACK, // VolumeFeedback
 							true,			 // AlacEncode
+						-1,				 // DefaultVolume (-1 = use device current)
+						false,			 // VolumeRemember
 					};
 
 /*----------------------------------------------------------------------------*/
@@ -536,7 +538,8 @@ static bool AddRaopDevice(struct sMR *Device, mdnssd_service_t *s) {
 	Device->PlayerIP 		= s->addr;
 	Device->PlayerPort 		= s->port;
 	Device->PlayerStatus	= 0;
-	Device->Volume			= -30.0;
+	Device->Volume			= Device->Config.DefaultVolume >= 0 ?
+								-30.0 * (1.0 - Device->Config.DefaultVolume / 100.0) : -30.0;
 	Device->SkipStart 		= 0;
 	Device->SkipDir 		= false;
 	Device->SpotPlayer		= NULL;
@@ -811,7 +814,13 @@ static void *ActiveRemoteThread(void *args) {
 					Device->Muted = false;
 					spotNotify(Device->SpotPlayer, SHADOW_VOLUME, (int) ((30.0 + volume) / 30.0 * UINT16_MAX));
 					raopcl_set_volume(Device->Raop, volume > -30 ? volume : -144);
-				} 
+					if (Device->Config.VolumeRemember && volume > -30.0) {
+						int newDefault = (int)((volume + 30.0) / 30.0 * 100.0 + 0.5);
+						if (newDefault > 100) newDefault = 100;
+						Device->Config.DefaultVolume = newDefault;
+						SaveConfig(glConfigName, glConfigID, false);
+					}
+				}
 			}
 		}
 

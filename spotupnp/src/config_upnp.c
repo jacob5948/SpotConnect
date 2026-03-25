@@ -73,6 +73,8 @@ void SaveConfig(char *name, void *ref, bool full) {
 	XMLUpdateNode(doc, common, false, "use_filecache", "%d", glMRConfig.CacheMode);
 	XMLUpdateNode(doc, common, false, "gapless", "%d", glMRConfig.Gapless);
 	XMLUpdateNode(doc, common, false, "artwork", "%s", glMRConfig.ArtWork);
+	XMLUpdateNode(doc, common, false, "default_volume", "%d", glMRConfig.DefaultVolume);
+	XMLUpdateNode(doc, common, false, "volume_remember", "%d", (int) glMRConfig.VolumeRemember);
 
 	// mutex is locked here so no risk of a player being destroyed in our back
 	for (int i = 0; i < glMaxDevices; i++) {
@@ -138,6 +140,8 @@ static void LoadConfigItem(tMRConfig *Conf, char *name, char *val) {
 	if (!strcmp(name, "use_filecache")) Conf->CacheMode = atoi(val);
 	if (!strcmp(name, "gapless")) Conf->Gapless = atoi(val);
 	if (!strcmp(name, "artwork")) strcpy(Conf->ArtWork, val);
+	if (!strcmp(name, "default_volume")) Conf->DefaultVolume = atoi(val);
+	if (!strcmp(name, "volume_remember")) Conf->VolumeRemember = atoi(val);
 	if (!strcmp(name, "credentials")) strcpy(Conf->Credentials, val);
 	if (!strcmp(name, "name")) strcpy(Conf->Name, val);
 	if (!strcmp(name, "mac"))  {

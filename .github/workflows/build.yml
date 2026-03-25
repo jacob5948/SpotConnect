@@ -1,0 +1,158 @@
+name: Build All Platforms
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types: [ created ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build Linux (cross-compile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install cross-compilation toolchains
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            python3-protobuf \
+            protobuf-compiler \
+            libmbedtls-dev \
+            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+            gcc-arm-linux-gnueabi g++-arm-linux-gnueabi \
+            gcc-mips-linux-gnu g++-mips-linux-gnu \
+            gcc-powerpc-linux-gnu g++-powerpc-linux-gnu \
+            gcc-sparc64-linux-gnu g++-sparc64-linux-gnu
+
+      - name: Build Linux targets
+        run: ./build.sh linux
+
+      - name: Upload spotupnp Linux binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotupnp-linux
+          path: spotupnp/bin/
+
+      - name: Upload spotraop Linux binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotraop-linux
+          path: spotraop/bin/
+
+  build-macos:
+    name: Build macOS (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: macos-13
+          - arch: arm64
+            runner: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: brew install cmake mbedtls protobuf
+
+      - name: Build spotupnp
+        working-directory: spotupnp
+        run: |
+          mkdir -p build/macos-${{ matrix.arch }}
+          cd build/macos-${{ matrix.arch }}
+          cmake ../.. \
+            -DHOST=macos \
+            -DPLATFORM=${{ matrix.arch }} \
+            -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls
+          make -j$(sysctl -n hw.ncpu)
+          mkdir -p ../../bin
+          cp spotupnp-macos-${{ matrix.arch }}* ../../bin/ 2>/dev/null || true
+
+      - name: Build spotraop
+        working-directory: spotraop
+        run: |
+          mkdir -p build/macos-${{ matrix.arch }}
+          cd build/macos-${{ matrix.arch }}
+          cmake ../.. \
+            -DHOST=macos \
+            -DPLATFORM=${{ matrix.arch }} \
+            -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls
+          make -j$(sysctl -n hw.ncpu)
+          mkdir -p ../../bin
+          cp spotraop-macos-${{ matrix.arch }}* ../../bin/ 2>/dev/null || true
+
+      - name: Upload spotupnp macOS binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotupnp-macos-${{ matrix.arch }}
+          path: spotupnp/bin/
+
+      - name: Upload spotraop macOS binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotraop-macos-${{ matrix.arch }}
+          path: spotraop/bin/
+
+  build-windows:
+    name: Build Windows (x86)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build spotupnp
+        working-directory: spotupnp
+        shell: cmd
+        run: call build.cmd
+
+      - name: Build spotraop
+        working-directory: spotraop
+        shell: cmd
+        run: call build.cmd
+
+      - name: Upload spotupnp Windows binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotupnp-windows
+          path: spotupnp/bin/
+
+      - name: Upload spotraop Windows binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotraop-windows
+          path: spotraop/bin/
+
+  package:
+    name: Package Release Artifacts
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Create release archive
+        run: |
+          mkdir -p release
+          find artifacts/ -type f | while read f; do
+            cp "$f" release/
+          done
+          zip -j SpotConnect-${{ github.ref_name }}.zip release/*
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: SpotConnect-*.zip

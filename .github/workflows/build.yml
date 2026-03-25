@@ -71,7 +71,7 @@ jobs:
         run: |
           brew install cmake mbedtls protobuf
           python3 -m venv /tmp/pyenv
-          /tmp/pyenv/bin/pip install protobuf setuptools
+          /tmp/pyenv/bin/pip install "protobuf<4" setuptools
           echo "/tmp/pyenv/bin" >> $GITHUB_PATH
           PYVER=$(/tmp/pyenv/bin/python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
           echo "PYTHONPATH=/tmp/pyenv/lib/python${PYVER}/site-packages" >> $GITHUB_ENV

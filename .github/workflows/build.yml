@@ -135,24 +135,22 @@ jobs:
           python-version: '3.12'
 
       - name: Install Python dependencies
-        run: pip install "nanopb>=0.4.9" protobuf
+        run: |
+          pip install "nanopb>=0.4.9" protobuf
+          python -c "import nanopb,os; print('NANOPB_GENDIR=' + os.path.join(os.path.dirname(nanopb.__file__),'generator'))" >> $env:GITHUB_ENV
+          python -c "import sys; print('PYEXE=' + sys.executable)" >> $env:GITHUB_ENV
 
       - name: Build spotupnp
         working-directory: spotupnp
         shell: cmd
         run: |
-          for /f "usebackq delims=" %%i in (`python -c "import nanopb,os; print(os.path.join(os.path.dirname(nanopb.__file__),'generator'))"`) do set NANOPB_GENDIR=%%i
-          for /f "usebackq delims=" %%i in (`python -c "import sys; print(sys.executable)"`) do set PYEXE=%%i
-          mkdir build\win32-x86 2>/dev/null
-          pushd build\win32-x86
-          cmake ..\..\ -A Win32 ^
+          cmake . -B build\win32-x86 -A Win32 ^
             -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}\common\libmbedtls ^
             -DPython_EXECUTABLE=%PYEXE% ^
             -DNANOPB_GENERATOR_SOURCE_DIR=%NANOPB_GENDIR%
           if errorlevel 1 exit /b 1
-          msbuild "spotupnp.sln" -p:Configuration=Release -p:Platform=Win32
+          cmake --build build\win32-x86 --config Release
           if errorlevel 1 exit /b 1
-          popd
           mkdir bin 2>/dev/null
           robocopy build\win32-x86\Release bin *.exe /NDL /NJH /NJS /nc /ns /np
           exit /b 0
@@ -161,18 +159,13 @@ jobs:
         working-directory: spotraop
         shell: cmd
         run: |
-          for /f "usebackq delims=" %%i in (`python -c "import nanopb,os; print(os.path.join(os.path.dirname(nanopb.__file__),'generator'))"`) do set NANOPB_GENDIR=%%i
-          for /f "usebackq delims=" %%i in (`python -c "import sys; print(sys.executable)"`) do set PYEXE=%%i
-          mkdir build\win32-x86 2>/dev/null
-          pushd build\win32-x86
-          cmake ..\..\ -A Win32 ^
+          cmake . -B build\win32-x86 -A Win32 ^
             -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}\common\libmbedtls ^
             -DPython_EXECUTABLE=%PYEXE% ^
             -DNANOPB_GENERATOR_SOURCE_DIR=%NANOPB_GENDIR%
           if errorlevel 1 exit /b 1
-          msbuild "spotraop.sln" -p:Configuration=Release -p:Platform=Win32
+          cmake --build build\win32-x86 --config Release
           if errorlevel 1 exit /b 1
-          popd
           mkdir bin 2>/dev/null
           robocopy build\win32-x86\Release bin *.exe /NDL /NJH /NJS /nc /ns /np
           exit /b 0

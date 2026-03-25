@@ -79,6 +79,8 @@ void SaveConfig(char *name, void *ref, bool full) {
 	XMLUpdateNode(doc, common, false, "alac_encode", "%d", (int) glMRConfig.AlacEncode);
 	XMLUpdateNode(doc, common, false, "encryption", "%d", (int) glMRConfig.Encryption);
 	XMLUpdateNode(doc, common, false, "read_ahead", "%d", (int) glMRConfig.ReadAhead);
+	XMLUpdateNode(doc, common, false, "default_volume", "%d", glMRConfig.DefaultVolume);
+	XMLUpdateNode(doc, common, false, "volume_remember", "%d", (int) glMRConfig.VolumeRemember);
 
 	for (int i = 0; i < MAX_RENDERERS; i++) {
 		IXML_Node *dev_node;
@@ -154,6 +156,8 @@ static void LoadConfigItem(tMRConfig *Conf, char *name, char *val) {
 	if (!strcmp(name, "volume_feedback")) Conf->VolumeFeedback = atol(val);
 	if (!strcmp(name, "volume_mode")) Conf->VolumeMode = atol(val);
 	if (!strcmp(name, "alac_encode")) Conf->AlacEncode = atol(val);
+	if (!strcmp(name, "default_volume")) Conf->DefaultVolume = atoi(val);
+	if (!strcmp(name, "volume_remember")) Conf->VolumeRemember = atoi(val);
 	if (!strcmp(name, "name")) strcpy(Conf->Name, val);
 }
 

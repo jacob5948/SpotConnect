@@ -78,6 +78,8 @@ tMRConfig			glMRConfig = {
 							true,				 // SendMetaData
 							false,				 // SendCoverArt
 							"",					 // artwork
+							-1,					 // DefaultVolume (-1 = use device current)
+							false,				 // VolumeRemember
 					};
 
 /*----------------------------------------------------------------------------*/
@@ -476,6 +478,10 @@ static void ProcessEvent(Upnp_EventType EventType, const void *_Event, void *Coo
 			LOG_INFO("[%p]: UPnP Volume local change %d:%d (%s)", Device, (int) Volume, (int) GroupVolume, Device->Master ? "slave": "master");
 			Volume = GroupVolume < 0 ? Volume / Device->Config.MaxVolume : GroupVolume / 100;
 			spotNotify(Device->SpotPlayer, SHADOW_VOLUME, (int) (Volume * UINT16_MAX));
+			if (Device->Config.VolumeRemember) {
+				Device->Config.DefaultVolume = (int) Device->Volume;
+				SaveConfig(glConfigName, glConfigID, false);
+			}
 		}
 	}
 
@@ -1096,6 +1102,13 @@ static bool AddMRDevice(struct sMR* Device, char* UDN, IXML_Document* DescDoc, c
 
 	Device->Master = GetMaster(Device, &friendlyName);
 	Device->Volume = CtrlGetVolume(Device);
+
+	if (Device->Config.DefaultVolume >= 0) {
+		Device->Volume = Device->Config.DefaultVolume;
+		Device->VolumeStampTx = gettime_ms();
+		CtrlSetVolume(Device, (uint8_t) Device->Volume, NULL);
+		LOG_INFO("[%p]: setting default volume %d", Device, Device->Config.DefaultVolume);
+	}
 
 	// set remaining items now that we are sure
 	if (*Device->Service[TOPOLOGY_IDX].ControlURL) {

@@ -58,7 +58,9 @@ jobs:
       - name: Install dependencies
         run: |
           brew install cmake mbedtls protobuf
-          pip3 install protobuf setuptools --break-system-packages
+          python3 -m venv /tmp/pyenv
+          /tmp/pyenv/bin/pip install protobuf setuptools
+          echo "/tmp/pyenv/bin" >> $GITHUB_PATH
 
       - name: Build spotupnp
         working-directory: spotupnp

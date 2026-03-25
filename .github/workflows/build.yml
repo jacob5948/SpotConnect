@@ -68,6 +68,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew install cmake mbedtls protobuf
+          pip3 install protobuf
 
       - name: Build spotupnp
         working-directory: spotupnp

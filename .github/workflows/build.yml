@@ -59,6 +59,23 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Patch nanopb pkg_resources import
+        run: |
+          find . -path "*/nanopb/generator/proto/__init__.py" | while read f; do
+            python3 - "$f" <<'PYEOF'
+import sys
+f = sys.argv[1]
+c = open(f).read()
+c = c.replace("import pkg_resources
+
+from ._utils", "from ._utils")
+c = c.replace("            _builtin_proto_include = pkg_resources.resource_filename", "            import pkg_resources
+            _builtin_proto_include = pkg_resources.resource_filename")
+open(f, 'w').write(c)
+print('Patched: ' + f)
+PYEOF
+          done
+
       - name: Install dependencies
         run: |
           brew install cmake mbedtls protobuf

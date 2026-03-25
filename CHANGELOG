@@ -1,3 +1,6 @@
+0.20.3
+ - clarify x86_64 Linux support (always built, now documented)
+
 0.20.2
  - add default_volume and volume_remember config options
  - update README with configuration documentation

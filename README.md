@@ -90,6 +90,8 @@ The default configuration file is `config.xml`, stored in the same directory as 
 - `enabled <0|1>` : in common section, enables new discovered players by default. In a dedicated section, enables the player
 - `name`        : The name that will appear for the device in Spotify. You can change the default name.
 - `vorbis_rate <96|160|320>` : set the Spotify bitrate (default 160)
+- `default_volume <-1|0..100>` : set the volume level when a device first connects. `-1` (default) means do not override — for UPnP devices the current hardware volume is queried; for AirPlay devices the volume starts at minimum. Any value from `0` to `100` sets the device to that volume on connect.
+- `volume_remember <0|1>` : when enabled (`1`), automatically saves the current volume as `default_volume` whenever the user changes volume on the device via Spotify. This effectively restores the device to the last Spotify-controlled volume level on the next connection. Default is `0` (disabled).
 
 ##### UPnP
 - `upnp_max`    : set the maximum UPnP version use to search players (default 1)

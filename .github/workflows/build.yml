@@ -71,10 +71,12 @@ jobs:
         run: |
           brew install cmake mbedtls protobuf
           python3 -m venv /tmp/pyenv
-          /tmp/pyenv/bin/pip install "protobuf<4" setuptools
+          /tmp/pyenv/bin/pip install "nanopb>=0.4.9" protobuf setuptools
           echo "/tmp/pyenv/bin" >> $GITHUB_PATH
           PYVER=$(/tmp/pyenv/bin/python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
           echo "PYTHONPATH=/tmp/pyenv/lib/python${PYVER}/site-packages" >> $GITHUB_ENV
+          NANOPB_GENDIR=$(/tmp/pyenv/bin/python3 -c "import nanopb, os; print(os.path.join(os.path.dirname(nanopb.__file__), 'generator'))")
+          echo "NANOPB_GENDIR=${NANOPB_GENDIR}" >> $GITHUB_ENV
 
       - name: Build spotupnp
         working-directory: spotupnp
@@ -87,7 +89,8 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls \
-            -DPython_EXECUTABLE=/tmp/pyenv/bin/python3
+            -DPython_EXECUTABLE=/tmp/pyenv/bin/python3 \
+            -DNANOPB_GENERATOR_SOURCE_DIR=$NANOPB_GENDIR
           make -j$(sysctl -n hw.ncpu)
           mkdir -p ../../bin
           cp spotupnp-macos-* ../../bin/ 2>/dev/null || true
@@ -103,7 +106,8 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls \
-            -DPython_EXECUTABLE=/tmp/pyenv/bin/python3
+            -DPython_EXECUTABLE=/tmp/pyenv/bin/python3 \
+            -DNANOPB_GENERATOR_SOURCE_DIR=$NANOPB_GENDIR
           make -j$(sysctl -n hw.ncpu)
           mkdir -p ../../bin
           cp spotraop-macos-* ../../bin/ 2>/dev/null || true

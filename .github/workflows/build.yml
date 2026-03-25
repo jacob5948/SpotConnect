@@ -54,9 +54,11 @@ jobs:
       matrix:
         include:
           - arch: x86_64
-            runner: macos-13
+            runner: macos-latest
+            osx_arch: x86_64
           - arch: arm64
             runner: macos-latest
+            osx_arch: arm64
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,6 +75,7 @@ jobs:
           cmake ../.. \
             -DHOST=macos \
             -DPLATFORM=${{ matrix.arch }} \
+            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.osx_arch }} \
             -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls
           make -j$(sysctl -n hw.ncpu)
           mkdir -p ../../bin

@@ -48,7 +48,7 @@ jobs:
           path: spotraop/bin/
 
   build-macos:
-    name: Build macOS (universal)
+    name: Build macOS (arm64)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -59,19 +59,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Patch nanopb pkg_resources import
-        run: |
-          find . -path "*/nanopb/generator/proto/__init__.py" | while read f; do
-            sed -i '' "/^import pkg_resources$/d" "$f"
-            sed -i '' "s/            _builtin_proto_include = pkg_resources/            import pkg_resources; _builtin_proto_include = pkg_resources/" "$f"
-            echo "Patched: $f"
-          done
 
       - name: Install dependencies
         run: |
           brew install cmake mbedtls protobuf
           python3 -m venv /tmp/pyenv
-          /tmp/pyenv/bin/pip install "nanopb>=0.4.9" protobuf setuptools
+          /tmp/pyenv/bin/pip install "nanopb>=0.4.9" protobuf
           echo "/tmp/pyenv/bin" >> $GITHUB_PATH
           PYVER=$(/tmp/pyenv/bin/python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
           echo "PYTHONPATH=/tmp/pyenv/lib/python${PYVER}/site-packages" >> $GITHUB_ENV

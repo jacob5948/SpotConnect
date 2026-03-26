@@ -35,6 +35,33 @@ jobs:
       - name: Build Linux targets
         run: bash build.sh linux
 
+      - name: Build Linux x86_64
+        run: |
+          mkdir -p spotupnp/build/linux-x86_64-ci
+          cd spotupnp/build/linux-x86_64-ci
+          cmake ../.. \
+            -DHOST=linux \
+            -DPLATFORM=x86_64 \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls \
+            -DCMAKE_EXE_LINKER_FLAGS=-no-pie
+          make -j$(nproc)
+          cd ../../..
+          mkdir -p spotupnp/bin
+          cp spotupnp/build/linux-x86_64-ci/spotupnp-linux-x86_64* spotupnp/bin/ 2>/dev/null || true
+          mkdir -p spotraop/build/linux-x86_64-ci
+          cd spotraop/build/linux-x86_64-ci
+          cmake ../.. \
+            -DHOST=linux \
+            -DPLATFORM=x86_64 \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            -DBELL_EXTERNAL_MBEDTLS=${{ github.workspace }}/common/libmbedtls \
+            -DCMAKE_EXE_LINKER_FLAGS=-no-pie
+          make -j$(nproc)
+          cd ../../..
+          mkdir -p spotraop/bin
+          cp spotraop/build/linux-x86_64-ci/spotraop-linux-x86_64* spotraop/bin/ 2>/dev/null || true
+
       - name: Upload spotupnp Linux binaries
         uses: actions/upload-artifact@v4
         with:

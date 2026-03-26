@@ -121,7 +121,7 @@ static bool					glPairing, glPassword;
 static bool					glUpdated;
 static char*				glSpotifyUserName;
 static char*				glSpotifyPassword;
-static char*				glNameFormat = "%s+";
+static char*				glNameFormat = "%s";
 
 static char usage[] =
 

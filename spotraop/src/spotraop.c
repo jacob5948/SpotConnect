@@ -1052,11 +1052,13 @@ static bool Stop(void) {
 /*---------------------------------------------------------------------------*/
 #if !defined(_MSC_VER) && !defined(WIN)
 static void sigfpe_handler(int sig, siginfo_t *si, void *ctx) {
-	void *bt[64];
-	int n = backtrace(bt, 64);
+	// Write the banner FIRST before backtrace(), so we always see it even if
+	// backtrace() itself crashes (common on static binaries lacking unwind tables).
 	const char msg[] = "\n*** SIGFPE: integer division/modulo by zero in cspot or libraop ***\n"
 	                   "Stack trace (resolve with: addr2line -e spotraop-linux-x86_64-static -f <addr>):\n";
 	(void) write(STDERR_FILENO, msg, sizeof(msg) - 1);
+	void *bt[64];
+	int n = backtrace(bt, 64);
 	backtrace_symbols_fd(bt, n, STDERR_FILENO);
 	signal(SIGFPE, SIG_DFL);
 	raise(SIGFPE);

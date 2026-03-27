@@ -1235,8 +1235,8 @@ int main(int argc, char *argv[]) {
 	// potentially overwrite with some cmdline parameters
 	if (!ParseArgs(argc, argv)) exit(1);
 
-	// make sure port range is correct
-	if (glPortBase && !glPortRange) glPortRange = MAX_RENDERERS*4;
+	// make sure port range is correct (guard against modulo-by-zero in libraop)
+	if (!glPortRange) glPortRange = glPortBase ? MAX_RENDERERS*4 : 1;
 
 	if (glLogFile) {
 		if (!freopen(glLogFile, "a", stderr)) {

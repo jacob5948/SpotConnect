@@ -703,7 +703,7 @@ int MasterHandler(Upnp_EventType EventType, const void *_Event, void *Cookie) {
 			pthread_cond_signal(&glUpdateCond);
 
 			// if there is a cookie, it's a targeted Sonos search
-			if (!Cookie) {
+			if (!Cookie && glMRConfig.UPnPMax) {
 				static int Version;
 				char SearchTopic[sizeof(MEDIA_RENDERER) + 3];
 				snprintf(SearchTopic, sizeof(SearchTopic), "%s:%i", MEDIA_RENDERER, ((Version++ % glMRConfig.UPnPMax) % 10) + 1);

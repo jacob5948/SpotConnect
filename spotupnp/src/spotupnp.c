@@ -135,7 +135,7 @@ static char				glConfigName[STR_LEN] = "./config.xml";
 static bool				glUpdated;
 static char*			glUserName;
 static char*			glPassword;
-static char*			glNameFormat = "%s+";
+static char*			glNameFormat = "%s";
 
 static char usage[] =
 

@@ -201,6 +201,16 @@ auto CSpotPlayer::postHandler(struct mg_connection* conn) {
     if (requestInfo->content_length > 0) {
         body.resize(requestInfo->content_length);
         mg_read(conn, body.data(), requestInfo->content_length);
+    } else if (requestInfo->content_length < 0) {
+        // chunked or unknown Content-Length — read until connection closes
+        char buf[4096];
+        int n;
+        while ((n = mg_read(conn, buf, sizeof(buf))) > 0) body.append(buf, n);
+    }
+
+    if (!body.empty()) {
+        CSPOT_LOG(info, "ZeroConf POST body (%zu bytes): %.256s", body.size(), body.c_str());
+
         mg_header hd[64];
         int num = mg_split_form_urlencoded(body.data(), hd, 64);
         std::map<std::string, std::string> queryMap;
@@ -210,11 +220,23 @@ auto CSpotPlayer::postHandler(struct mg_connection* conn) {
             queryMap[hd[i].name] = hd[i].value;
         }
 
-        // Pass user's credentials to the blob
-        blob->loadZeroconfQuery(queryMap);
+        CSPOT_LOG(info, "ZeroConf parsed %d fields: blob=%s clientKey=%s userName=%s",
+                  num,
+                  queryMap["blob"].empty() ? "MISSING" : "present",
+                  queryMap["clientKey"].empty() ? "MISSING" : "present",
+                  queryMap["userName"].empty() ? "MISSING" : queryMap["userName"].c_str());
 
-        // We have the blob, proceed to login
-        clientConnected.give();
+        // Guard: if blob or clientKey are missing, Shannon cipher will get keyLength=0
+        // causing SIGFPE via key[i % keyLength]. Do not proceed without required fields.
+        if (queryMap["blob"].empty() || queryMap["clientKey"].empty()) {
+            CSPOT_LOG(error, "ZeroConf POST missing required fields (blob or clientKey) — not connecting");
+        } else {
+            // Pass user's credentials to the blob
+            blob->loadZeroconfQuery(queryMap);
+
+            // We have the blob, proceed to login
+            clientConnected.give();
+        }
     }
 
 #ifdef BELL_ONLY_CJSON

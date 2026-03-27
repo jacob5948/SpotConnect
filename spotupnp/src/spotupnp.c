@@ -706,7 +706,7 @@ int MasterHandler(Upnp_EventType EventType, const void *_Event, void *Cookie) {
 			if (!Cookie) {
 				static int Version;
 				char SearchTopic[sizeof(MEDIA_RENDERER) + 3];
-				snprintf(SearchTopic, sizeof(SearchTopic), "%s:%i", MEDIA_RENDERER, ((Version++ % glMRConfig.UPnPMax) % 10) + 1);
+				snprintf(SearchTopic, sizeof(SearchTopic), "%s:%i", MEDIA_RENDERER, (glMRConfig.UPnPMax ? (Version++ % glMRConfig.UPnPMax) % 10 : 0) + 1);
 				UpnpSearchAsync(glControlPointHandle, DISCOVERY_TIME, SearchTopic, NULL);
 			}
 

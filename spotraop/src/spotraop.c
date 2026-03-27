@@ -13,6 +13,10 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <string.h>
+#if !defined(_MSC_VER) && !defined(WIN)
+#include <execinfo.h>
+#include <unistd.h>
+#endif
 
 #include "platform.h"
 
@@ -1046,6 +1050,20 @@ static bool Stop(void) {
 }
 
 /*---------------------------------------------------------------------------*/
+#if !defined(_MSC_VER) && !defined(WIN)
+static void sigfpe_handler(int sig, siginfo_t *si, void *ctx) {
+	void *bt[64];
+	int n = backtrace(bt, 64);
+	const char msg[] = "\n*** SIGFPE: integer division/modulo by zero in cspot or libraop ***\n"
+	                   "Stack trace (resolve with: addr2line -e spotraop-linux-x86_64-static -f <addr>):\n";
+	(void) write(STDERR_FILENO, msg, sizeof(msg) - 1);
+	backtrace_symbols_fd(bt, n, STDERR_FILENO);
+	signal(SIGFPE, SIG_DFL);
+	raise(SIGFPE);
+}
+#endif
+
+/*---------------------------------------------------------------------------*/
 static void sighandler(int signum) {
 	static bool quit = false;
 	// give it some time to finish ...
@@ -1211,6 +1229,15 @@ int main(int argc, char *argv[]) {
 #endif
 #if defined(SIGHUP)
 	signal(SIGHUP, sighandler);
+#endif
+#if !defined(_MSC_VER) && !defined(WIN)
+	{
+		struct sigaction sa;
+		memset(&sa, 0, sizeof(sa));
+		sa.sa_sigaction = sigfpe_handler;
+		sa.sa_flags = SA_SIGINFO;
+		sigaction(SIGFPE, &sa, NULL);
+	}
 #endif
 
 	// otherwise some atof/strtod fail with '.'

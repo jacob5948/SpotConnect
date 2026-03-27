@@ -72,7 +72,7 @@ if(MSVC)
 	add_compile_definitions(_WINSOCK_DEPRECATED_NO_WARNINGS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE)
 	add_definitions(/wd4068 /wd4244 /wd4018 /wd4101 /wd4102 /wd4142 /wd4996 /wd4090)
 else()
-	add_compile_options(-O2 -fdata-sections -ffunction-sections)
+	add_compile_options(-O2 -fdata-sections -ffunction-sections -fno-omit-frame-pointer)
 endif()
 
 # Main target sources

@@ -101,7 +101,7 @@ public:
 
 CSpotPlayer::CSpotPlayer(char *clientId, char* clientSecret, char* name, char* id, char *credentials, struct in_addr addr, AudioFormat format, 
                          size_t frameSize, uint32_t delay, struct shadowPlayer* shadow) 
-            : bell::Task("playerInstance", 48 * 1024, 0, 0), 
+            : bell::Task("playerInstance", 256 * 1024, 0, 0),
             clientConnected(1), addr(addr), clientId(clientId), clientSecret(clientSecret), name(name), credentials(credentials), 
             shadow(shadow), frameSize(frameSize), delay(delay), format(format) {
     this->raopClient = shadowRaop(shadow);
@@ -201,8 +201,8 @@ auto CSpotPlayer::postHandler(struct mg_connection* conn) {
     if (requestInfo->content_length > 0) {
         body.resize(requestInfo->content_length);
         mg_read(conn, body.data(), requestInfo->content_length);
-        mg_header hd[10];
-        int num = mg_split_form_urlencoded(body.data(), hd, 10);
+        mg_header hd[64];
+        int num = mg_split_form_urlencoded(body.data(), hd, 64);
         std::map<std::string, std::string> queryMap;
 
         // Parse the form data
